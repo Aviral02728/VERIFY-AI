@@ -40,6 +40,8 @@ export default function UrlAnalyzer() {
     setResult(null);
 
     try {
+      const { data: userData } = await supabase.auth.getUser();
+      
       const { data, error } = await supabase.functions.invoke('verify-url', {
         body: { url },
       });
@@ -49,11 +51,14 @@ export default function UrlAnalyzer() {
       setResult(data);
       setUrl(''); // Clear input after successful analysis
 
-      await supabase.from('analysis_history').insert({
-        content_type: 'url',
-        content: url,
-        result: data,
-      } as any);
+      if (userData.user) {
+        await supabase.from('analysis_history').insert({
+          user_id: userData.user.id,
+          content_type: 'url',
+          content: url,
+          result: data,
+        });
+      }
     } catch (err: any) {
       toast({
         title: "Error",

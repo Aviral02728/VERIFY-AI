@@ -33,6 +33,8 @@ export default function TextAnalyzer() {
     setResult(null);
 
     try {
+      const { data: userData } = await supabase.auth.getUser();
+      
       const { data, error } = await supabase.functions.invoke('verify-text', {
         body: { content: text, type: 'text' },
       });
@@ -42,11 +44,14 @@ export default function TextAnalyzer() {
       setResult(data);
       setText(''); // Clear input after successful analysis
 
-      await supabase.from('analysis_history').insert({
-        content_type: 'text',
-        content: text.substring(0, 500),
-        result: data,
-      } as any);
+      if (userData.user) {
+        await supabase.from('analysis_history').insert({
+          user_id: userData.user.id,
+          content_type: 'text',
+          content: text.substring(0, 500),
+          result: data,
+        });
+      }
     } catch (err: any) {
       toast({
         title: "Error",

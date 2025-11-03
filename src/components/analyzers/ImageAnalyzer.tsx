@@ -60,6 +60,8 @@ export default function ImageAnalyzer() {
     setResult(null);
 
     try {
+      const { data: userData } = await supabase.auth.getUser();
+      
       const reader = new FileReader();
       reader.onloadend = async () => {
         const base64Image = reader.result as string;
@@ -72,11 +74,14 @@ export default function ImageAnalyzer() {
 
         setResult(data);
 
-        await supabase.from('analysis_history').insert({
-          content_type: 'image',
-          content: `Image analysis - ${imageFile.name}`,
-          result: data,
-        } as any);
+        if (userData.user) {
+          await supabase.from('analysis_history').insert({
+            user_id: userData.user.id,
+            content_type: 'image',
+            content: `Image analysis - ${imageFile.name}`,
+            result: data,
+          });
+        }
 
         setLoading(false);
       };
