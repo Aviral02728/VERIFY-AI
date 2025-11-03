@@ -1,5 +1,3 @@
-import "jsr:@supabase/functions-js/edge-runtime.d.ts";
-
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
@@ -96,7 +94,7 @@ Be thorough, objective, and cite reasoning for your verdict.`
       const pointsText = keyPointsMatch[1];
       const points = pointsText.match(/- (.+)/g);
       if (points) {
-        keyPoints.push(...points.map(p => p.replace(/^- /, "").trim()));
+        keyPoints.push(...points.map((p: string) => p.replace(/^- /, "").trim()));
       }
     }
 

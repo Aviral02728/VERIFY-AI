@@ -1,5 +1,3 @@
-import "jsr:@supabase/functions-js/edge-runtime.d.ts";
-
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
@@ -113,7 +111,7 @@ Consider factors like domain reputation, known fact-checking sources, news organ
       const findingsText = findingsMatch[1];
       const points = findingsText.match(/- (.+)/g);
       if (points) {
-        findings.push(...points.map(p => p.replace(/^- /, "").trim()));
+        findings.push(...points.map((p: string) => p.replace(/^- /, "").trim()));
       }
     }
 
