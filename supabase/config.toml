@@ -5,3 +5,6 @@ verify_jwt = true
 
 [functions.verify-url]
 verify_jwt = true
+
+[functions.verify-image]
+verify_jwt = true

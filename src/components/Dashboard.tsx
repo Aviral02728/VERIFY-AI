@@ -1,12 +1,14 @@
 import { useState } from 'react';
-import { Shield, LogOut, FileText, Link as LinkIcon } from 'lucide-react';
+import { Shield, LogOut, FileText, Link as LinkIcon, Image, History as HistoryIcon } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import TextAnalyzer from './analyzers/TextAnalyzer';
 import UrlAnalyzer from './analyzers/UrlAnalyzer';
+import ImageAnalyzer from './analyzers/ImageAnalyzer';
+import History from './analyzers/History';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
-type Tab = 'text' | 'url';
+type Tab = 'text' | 'url' | 'image' | 'history';
 
 export default function Dashboard() {
   const [activeTab, setActiveTab] = useState<Tab>('text');
@@ -47,23 +49,37 @@ export default function Dashboard() {
         </div>
 
         <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as Tab)} className="w-full">
-          <TabsList className="grid w-full max-w-md grid-cols-2 mb-6">
-            <TabsTrigger value="text">
+          <TabsList className="grid w-full max-w-2xl grid-cols-4 mb-6">
+            <TabsTrigger value="text" className="transition-all duration-200">
               <FileText className="h-5 w-5 mr-2" />
               Text
             </TabsTrigger>
-            <TabsTrigger value="url">
+            <TabsTrigger value="url" className="transition-all duration-200">
               <LinkIcon className="h-5 w-5 mr-2" />
               URL
             </TabsTrigger>
+            <TabsTrigger value="image" className="transition-all duration-200">
+              <Image className="h-5 w-5 mr-2" />
+              Image
+            </TabsTrigger>
+            <TabsTrigger value="history" className="transition-all duration-200">
+              <HistoryIcon className="h-5 w-5 mr-2" />
+              History
+            </TabsTrigger>
           </TabsList>
 
-          <div className="bg-card rounded-2xl border border-border shadow-lg">
+          <div className="bg-card rounded-2xl border border-border shadow-lg transition-all duration-300 hover:shadow-xl">
             <TabsContent value="text" className="m-0">
               <TextAnalyzer />
             </TabsContent>
             <TabsContent value="url" className="m-0">
               <UrlAnalyzer />
+            </TabsContent>
+            <TabsContent value="image" className="m-0">
+              <ImageAnalyzer />
+            </TabsContent>
+            <TabsContent value="history" className="m-0">
+              <History />
             </TabsContent>
           </div>
         </Tabs>

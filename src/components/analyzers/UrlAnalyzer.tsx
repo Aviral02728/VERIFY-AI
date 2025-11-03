@@ -47,6 +47,7 @@ export default function UrlAnalyzer() {
       if (error) throw error;
 
       setResult(data);
+      setUrl(''); // Clear input after successful analysis
 
       await supabase.from('analysis_history').insert({
         content_type: 'url',
