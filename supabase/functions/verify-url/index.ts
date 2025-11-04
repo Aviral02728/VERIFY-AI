@@ -36,9 +36,9 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
-    if (!GEMINI_API_KEY) {
-      console.error("GEMINI_API_KEY not configured");
+    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    if (!LOVABLE_API_KEY) {
+      console.error("LOVABLE_API_KEY not configured");
       return new Response(
         JSON.stringify({ error: "API key not configured" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -49,32 +49,62 @@ Deno.serve(async (req: Request) => {
     const urlObj = new URL(url);
     const domain = urlObj.hostname;
 
-    // Call Gemini API for URL/domain verification
+    // Fetch actual webpage content
+    let pageContent = "";
+    try {
+      const pageResponse = await fetch(url, {
+        headers: { 'User-Agent': 'Mozilla/5.0 (compatible; NewsVerifier/1.0)' }
+      });
+      
+      if (pageResponse.ok) {
+        const html = await pageResponse.text();
+        pageContent = html
+          .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
+          .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+          .replace(/<[^>]+>/g, ' ')
+          .replace(/\s+/g, ' ')
+          .trim()
+          .substring(0, 8000);
+      }
+    } catch (e) {
+      console.error("Failed to fetch page:", e);
+    }
+
+    // Call Lovable AI for verification
     const geminiResponse = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${GEMINI_API_KEY}`,
+      "https://ai.gateway.lovable.dev/v1/chat/completions",
       {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Authorization": `Bearer ${LOVABLE_API_KEY}`,
+          "Content-Type": "application/json"
+        },
         body: JSON.stringify({
-          contents: [{
-            parts: [{
-              text: `You are an expert at evaluating website credibility and detecting misinformation sources. Analyze this URL/domain for credibility.
+          model: "google/gemini-2.5-flash",
+          messages: [{
+            role: "user",
+            content: `You are a fact-checking expert analyzing news for credibility and accuracy.
 
 URL: ${url}
 Domain: ${domain}
+${pageContent ? `Article Content:\n${pageContent.substring(0, 4000)}` : 'Content unavailable'}
 
-Provide your analysis in this EXACT format:
+IMPORTANT: 
+- Analyze the source's reputation and journalistic standards
+- Evaluate content for bias, sensationalism, or misinformation patterns
+- For recent events (after your knowledge cutoff), acknowledge this limitation
+- Note what additional verification would be needed for recent claims
+- Consider writing quality, evidence citations, and fact-checkability
+
+Format:
 VERDICT: [TRUSTWORTHY/SUSPICIOUS/UNCERTAIN]
 DOMAIN_SCORE: [0-100]
 REPUTATION: [EXCELLENT/GOOD/MODERATE/POOR/UNKNOWN]
 KNOWN_MISINFORMATION: [YES/NO]
 FINDINGS:
-- [Finding 1]
-- [Finding 2]
-- [Finding 3]
-
-Consider factors like domain reputation, known fact-checking sources, news organization credibility, and patterns common in misinformation websites.`
-            }]
+- [Finding about source/content quality]
+- [Finding about verifiability/limitations]
+- [Additional findings]`
           }]
         })
       }
@@ -82,7 +112,7 @@ Consider factors like domain reputation, known fact-checking sources, news organ
 
     if (!geminiResponse.ok) {
       const errorText = await geminiResponse.text();
-      console.error("Gemini API error:", geminiResponse.status, errorText);
+      console.error("AI API error:", geminiResponse.status, errorText);
       return new Response(
         JSON.stringify({ error: "Verification failed" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -90,7 +120,7 @@ Consider factors like domain reputation, known fact-checking sources, news organ
     }
 
     const geminiData = await geminiResponse.json();
-    const responseText = geminiData.candidates?.[0]?.content?.parts?.[0]?.text || "";
+    const responseText = geminiData.choices?.[0]?.message?.content || "";
 
     console.log("Gemini response:", responseText);
 

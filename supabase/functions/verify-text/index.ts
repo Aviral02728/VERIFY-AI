@@ -27,39 +27,48 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
-    if (!GEMINI_API_KEY) {
-      console.error("GEMINI_API_KEY not configured");
+    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    if (!LOVABLE_API_KEY) {
+      console.error("LOVABLE_API_KEY not configured");
       return new Response(
         JSON.stringify({ error: "API key not configured" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // Call Gemini API for text verification
+    // Call Lovable AI for text verification
     const geminiResponse = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${GEMINI_API_KEY}`,
+      "https://ai.gateway.lovable.dev/v1/chat/completions",
       {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Authorization": `Bearer ${LOVABLE_API_KEY}`,
+          "Content-Type": "application/json"
+        },
         body: JSON.stringify({
-          contents: [{
-            parts: [{
-              text: `You are an expert fact-checker and misinformation detector. Analyze the following text and determine if it is TRUE, FALSE, or UNCERTAIN.
+          model: "google/gemini-2.5-flash",
+          messages: [{
+            role: "user",
+            content: `You are an expert fact-checker analyzing claims for accuracy.
 
-Text to verify: "${content}"
+Text: "${content}"
 
-Provide your analysis in this EXACT format:
+CRITICAL GUIDELINES:
+- Assess based on your knowledge and logical reasoning
+- Identify factual claims vs opinions
+- Look for red flags: sensational language, lack of sources, logical fallacies
+- For events after your training cutoff, explicitly state "This claim involves recent events I cannot verify"
+- Suggest verification steps for claims you cannot confirm
+- Consider context and potential biases
+
+Format:
 VERDICT: [TRUE/FALSE/UNCERTAIN]
 CONFIDENCE: [HIGH/MEDIUM/LOW]
-EXPLANATION: [2-3 sentence explanation]
+EXPLANATION: [Include knowledge limitations if applicable]
 KEY POINTS:
-- [Point 1]
-- [Point 2]
-- [Point 3]
-
-Be thorough, objective, and cite reasoning for your verdict.`
-            }]
+- [Factual assessment or limitation]
+- [Red flags or verification needs]
+- [Additional context]`
           }]
         })
       }
@@ -67,7 +76,7 @@ Be thorough, objective, and cite reasoning for your verdict.`
 
     if (!geminiResponse.ok) {
       const errorText = await geminiResponse.text();
-      console.error("Gemini API error:", geminiResponse.status, errorText);
+      console.error("AI API error:", geminiResponse.status, errorText);
       return new Response(
         JSON.stringify({ error: "Verification failed" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -75,7 +84,7 @@ Be thorough, objective, and cite reasoning for your verdict.`
     }
 
     const geminiData = await geminiResponse.json();
-    const responseText = geminiData.candidates?.[0]?.content?.parts?.[0]?.text || "";
+    const responseText = geminiData.choices?.[0]?.message?.content || "";
 
     console.log("Gemini response:", responseText);
 
