@@ -37,6 +37,8 @@ Deno.serve(async (req: Request) => {
     }
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    const FACT_CHECK_API_KEY = Deno.env.get("FACT_CHECK_API_KEY");
+    
     if (!LOVABLE_API_KEY) {
       console.error("LOVABLE_API_KEY not configured");
       return new Response(
@@ -70,6 +72,33 @@ Deno.serve(async (req: Request) => {
       console.error("Failed to fetch page:", e);
     }
 
+    // Check Google Fact Check API
+    let factCheckResults = "";
+    if (FACT_CHECK_API_KEY && pageContent) {
+      try {
+        const searchQuery = pageContent.substring(0, 500);
+        const factCheckUrl = `https://factchecktools.googleapis.com/v1alpha1/claims:search?query=${encodeURIComponent(searchQuery)}&key=${FACT_CHECK_API_KEY}`;
+        const factCheckResponse = await fetch(factCheckUrl);
+        
+        if (factCheckResponse.ok) {
+          const factCheckData = await factCheckResponse.json();
+          if (factCheckData.claims && factCheckData.claims.length > 0) {
+            factCheckResults = "\n\nFACT-CHECK DATABASE RESULTS:\n";
+            factCheckData.claims.slice(0, 3).forEach((claim: any, index: number) => {
+              factCheckResults += `\n${index + 1}. Claim: "${claim.text}"\n`;
+              if (claim.claimReview && claim.claimReview.length > 0) {
+                const review = claim.claimReview[0];
+                factCheckResults += `   Rating: ${review.textualRating || 'N/A'}\n`;
+                factCheckResults += `   Publisher: ${review.publisher?.name || 'Unknown'}\n`;
+              }
+            });
+          }
+        }
+      } catch (e) {
+        console.error("Fact Check API error:", e);
+      }
+    }
+
     // Call Lovable AI for verification
     const geminiResponse = await fetch(
       "https://ai.gateway.lovable.dev/v1/chat/completions",
@@ -88,8 +117,11 @@ Deno.serve(async (req: Request) => {
 URL: ${url}
 Domain: ${domain}
 ${pageContent ? `Article Content:\n${pageContent.substring(0, 4000)}` : 'Content unavailable'}
+${factCheckResults}
 
-IMPORTANT: 
+IMPORTANT:
+- If fact-check database results are provided above, heavily weight them in your analysis
+- Professional fact-checkers have already reviewed these claims
 - Analyze the source's reputation and journalistic standards
 - Evaluate content for bias, sensationalism, or misinformation patterns
 - For recent events (after your knowledge cutoff), acknowledge this limitation
