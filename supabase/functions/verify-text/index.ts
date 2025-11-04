@@ -28,6 +28,8 @@ Deno.serve(async (req: Request) => {
     }
 
     const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
+    const GOOGLE_SEARCH_API_KEY = Deno.env.get("GOOGLE_SEARCH_API_KEY");
+    const GOOGLE_SEARCH_ENGINE_ID = Deno.env.get("GOOGLE_SEARCH_ENGINE_ID");
     
     if (!GEMINI_API_KEY) {
       console.error("GEMINI_API_KEY not configured");
@@ -35,6 +37,30 @@ Deno.serve(async (req: Request) => {
         JSON.stringify({ error: "API key not configured" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
+    }
+
+    // Fetch Google Custom Search results for verification
+    let searchContext = "";
+    if (GOOGLE_SEARCH_API_KEY && GOOGLE_SEARCH_ENGINE_ID) {
+      try {
+        const searchQuery = encodeURIComponent(content.substring(0, 200));
+        const searchUrl = `https://www.googleapis.com/customsearch/v1?key=${GOOGLE_SEARCH_API_KEY}&cx=${GOOGLE_SEARCH_ENGINE_ID}&q=${searchQuery}`;
+        
+        const searchResponse = await fetch(searchUrl);
+        if (searchResponse.ok) {
+          const searchData = await searchResponse.json();
+          if (searchData.items && searchData.items.length > 0) {
+            searchContext = "\n\nRECENT SEARCH RESULTS:\n";
+            searchData.items.slice(0, 5).forEach((item: any, index: number) => {
+              searchContext += `\n${index + 1}. ${item.title}\n`;
+              searchContext += `   Source: ${item.link}\n`;
+              searchContext += `   Snippet: ${item.snippet}\n`;
+            });
+          }
+        }
+      } catch (e) {
+        console.error("Google Search API error:", e);
+      }
     }
 
     // Call native Gemini API with Google Search grounding
@@ -49,18 +75,19 @@ Deno.serve(async (req: Request) => {
         body: JSON.stringify({
           contents: [{
             parts: [{
-              text: `Analyze this claim for factual accuracy using Google Search when needed for verification.
+              text: `Analyze this claim for factual accuracy. Use the search results provided to verify the claim.
 
 Claim: "${content}"
+${searchContext}
 
-Provide your analysis in this EXACT format:
+Based on the search results and your knowledge, provide analysis in this EXACT format:
 
 VERDICT: [TRUE/FALSE/UNCERTAIN]
 CONFIDENCE: [HIGH/MEDIUM/LOW]
-EXPLANATION: [Your detailed analysis with sources when available]
+EXPLANATION: [Your detailed analysis citing specific sources from search results]
 KEY POINTS:
-- [First key point]
-- [Second key point]
+- [First key point with source]
+- [Second key point with source]
 - [Third key point]`
             }]
           }],

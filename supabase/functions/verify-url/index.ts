@@ -37,6 +37,8 @@ Deno.serve(async (req: Request) => {
     }
 
     const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
+    const GOOGLE_SEARCH_API_KEY = Deno.env.get("GOOGLE_SEARCH_API_KEY");
+    const GOOGLE_SEARCH_ENGINE_ID = Deno.env.get("GOOGLE_SEARCH_ENGINE_ID");
     
     if (!GEMINI_API_KEY) {
       console.error("GEMINI_API_KEY not configured");
@@ -71,6 +73,30 @@ Deno.serve(async (req: Request) => {
       console.error("Failed to fetch page:", e);
     }
 
+    // Fetch Google Custom Search results about the URL/domain
+    let searchContext = "";
+    if (GOOGLE_SEARCH_API_KEY && GOOGLE_SEARCH_ENGINE_ID && pageContent) {
+      try {
+        const searchQuery = encodeURIComponent(`${domain} ${pageContent.substring(0, 100)} fact check`);
+        const searchUrl = `https://www.googleapis.com/customsearch/v1?key=${GOOGLE_SEARCH_API_KEY}&cx=${GOOGLE_SEARCH_ENGINE_ID}&q=${searchQuery}`;
+        
+        const searchResponse = await fetch(searchUrl);
+        if (searchResponse.ok) {
+          const searchData = await searchResponse.json();
+          if (searchData.items && searchData.items.length > 0) {
+            searchContext = "\n\nRELATED SEARCH RESULTS:\n";
+            searchData.items.slice(0, 5).forEach((item: any, index: number) => {
+              searchContext += `\n${index + 1}. ${item.title}\n`;
+              searchContext += `   Source: ${item.link}\n`;
+              searchContext += `   Snippet: ${item.snippet}\n`;
+            });
+          }
+        }
+      } catch (e) {
+        console.error("Google Search API error:", e);
+      }
+    }
+
     // Call native Gemini API with Google Search grounding
     const geminiResponse = await fetch(
       "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent",
@@ -83,21 +109,22 @@ Deno.serve(async (req: Request) => {
         body: JSON.stringify({
           contents: [{
             parts: [{
-              text: `Analyze this news article for credibility and accuracy using Google Search when needed.
+              text: `Analyze this news article for credibility and accuracy. Use the search results to verify claims and check reputation.
 
 URL: ${url}
 Domain: ${domain}
 ${pageContent ? `Content:\n${pageContent.substring(0, 4000)}` : 'Content unavailable'}
+${searchContext}
 
-Provide your analysis in this EXACT format:
+Based on the search results and your knowledge, provide analysis in this EXACT format:
 
 VERDICT: [TRUSTWORTHY/SUSPICIOUS/UNCERTAIN]
 DOMAIN_SCORE: [0-100]
 REPUTATION: [EXCELLENT/GOOD/MODERATE/POOR/UNKNOWN]
 KNOWN_MISINFORMATION: [YES/NO]
 FINDINGS:
-- [First finding with sources]
-- [Second finding]
+- [First finding citing specific sources]
+- [Second finding with verification]
 - [Third finding]`
             }]
           }],
