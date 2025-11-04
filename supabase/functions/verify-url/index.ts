@@ -37,7 +37,6 @@ Deno.serve(async (req: Request) => {
     }
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    const FACT_CHECK_API_KEY = Deno.env.get("FACT_CHECK_API_KEY");
     
     if (!LOVABLE_API_KEY) {
       console.error("LOVABLE_API_KEY not configured");
@@ -72,33 +71,6 @@ Deno.serve(async (req: Request) => {
       console.error("Failed to fetch page:", e);
     }
 
-    // Check Google Fact Check API
-    let factCheckResults = "";
-    if (FACT_CHECK_API_KEY && pageContent) {
-      try {
-        const searchQuery = pageContent.substring(0, 500);
-        const factCheckUrl = `https://factchecktools.googleapis.com/v1alpha1/claims:search?query=${encodeURIComponent(searchQuery)}&key=${FACT_CHECK_API_KEY}`;
-        const factCheckResponse = await fetch(factCheckUrl);
-        
-        if (factCheckResponse.ok) {
-          const factCheckData = await factCheckResponse.json();
-          if (factCheckData.claims && factCheckData.claims.length > 0) {
-            factCheckResults = "\n\nFACT-CHECK DATABASE RESULTS:\n";
-            factCheckData.claims.slice(0, 3).forEach((claim: any, index: number) => {
-              factCheckResults += `\n${index + 1}. Claim: "${claim.text}"\n`;
-              if (claim.claimReview && claim.claimReview.length > 0) {
-                const review = claim.claimReview[0];
-                factCheckResults += `   Rating: ${review.textualRating || 'N/A'}\n`;
-                factCheckResults += `   Publisher: ${review.publisher?.name || 'Unknown'}\n`;
-              }
-            });
-          }
-        }
-      } catch (e) {
-        console.error("Fact Check API error:", e);
-      }
-    }
-
     // Call Lovable AI for verification
     const geminiResponse = await fetch(
       "https://ai.gateway.lovable.dev/v1/chat/completions",
@@ -112,21 +84,20 @@ Deno.serve(async (req: Request) => {
           model: "google/gemini-2.5-flash",
           messages: [{
             role: "user",
-            content: `You are a fact-checking expert analyzing news for credibility and accuracy.
+            content: `You are a fact-checking expert analyzing news for credibility and accuracy. Use Google Search to find current information and fact-checks about this article.
 
 URL: ${url}
 Domain: ${domain}
 ${pageContent ? `Article Content:\n${pageContent.substring(0, 4000)}` : 'Content unavailable'}
-${factCheckResults}
 
 IMPORTANT:
-- If fact-check database results are provided above, heavily weight them in your analysis
-- Professional fact-checkers have already reviewed these claims
+- Use Google Search to find recent information and fact-checks about claims in this article
+- Prioritize fact-checks from reputable sources like Snopes, PolitiFact, Reuters, AP News
 - Analyze the source's reputation and journalistic standards
 - Evaluate content for bias, sensationalism, or misinformation patterns
-- For recent events (after your knowledge cutoff), acknowledge this limitation
-- Note what additional verification would be needed for recent claims
+- For recent events, use search results to verify current information
 - Consider writing quality, evidence citations, and fact-checkability
+- Check if the domain or specific claims have been flagged by fact-checkers
 
 Format:
 VERDICT: [TRUSTWORTHY/SUSPICIOUS/UNCERTAIN]
@@ -134,9 +105,17 @@ DOMAIN_SCORE: [0-100]
 REPUTATION: [EXCELLENT/GOOD/MODERATE/POOR/UNKNOWN]
 KNOWN_MISINFORMATION: [YES/NO]
 FINDINGS:
-- [Finding about source/content quality]
-- [Finding about verifiability/limitations]
+- [Finding about source/content quality with sources]
+- [Finding about verifiability with search results]
 - [Additional findings]`
+          }],
+          tools: [{
+            google_search_retrieval: {
+              dynamic_retrieval_config: {
+                mode: "MODE_DYNAMIC",
+                dynamic_threshold: 0.3
+              }
+            }
           }]
         })
       }

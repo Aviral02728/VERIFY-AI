@@ -28,7 +28,6 @@ Deno.serve(async (req: Request) => {
     }
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    const FACT_CHECK_API_KEY = Deno.env.get("FACT_CHECK_API_KEY");
     
     if (!LOVABLE_API_KEY) {
       console.error("LOVABLE_API_KEY not configured");
@@ -36,33 +35,6 @@ Deno.serve(async (req: Request) => {
         JSON.stringify({ error: "API key not configured" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
-    }
-
-    // First, check Google Fact Check API for existing fact-checks
-    let factCheckResults = "";
-    if (FACT_CHECK_API_KEY) {
-      try {
-        const factCheckUrl = `https://factchecktools.googleapis.com/v1alpha1/claims:search?query=${encodeURIComponent(content)}&key=${FACT_CHECK_API_KEY}`;
-        const factCheckResponse = await fetch(factCheckUrl);
-        
-        if (factCheckResponse.ok) {
-          const factCheckData = await factCheckResponse.json();
-          if (factCheckData.claims && factCheckData.claims.length > 0) {
-            factCheckResults = "\n\nFACT-CHECK DATABASE RESULTS:\n";
-            factCheckData.claims.slice(0, 3).forEach((claim: any, index: number) => {
-              factCheckResults += `\n${index + 1}. Claim: "${claim.text || content}"\n`;
-              if (claim.claimReview && claim.claimReview.length > 0) {
-                const review = claim.claimReview[0];
-                factCheckResults += `   Rating: ${review.textualRating || 'N/A'}\n`;
-                factCheckResults += `   Publisher: ${review.publisher?.name || 'Unknown'}\n`;
-                factCheckResults += `   URL: ${review.url || 'N/A'}\n`;
-              }
-            });
-          }
-        }
-      } catch (e) {
-        console.error("Fact Check API error:", e);
-      }
     }
 
     // Call Lovable AI for text verification
@@ -78,29 +50,35 @@ Deno.serve(async (req: Request) => {
           model: "google/gemini-2.5-flash",
           messages: [{
             role: "user",
-            content: `You are an expert fact-checker analyzing claims for accuracy.
+            content: `You are an expert fact-checker analyzing claims for accuracy. Use Google Search to find current information and fact-checks.
 
 Text: "${content}"
-${factCheckResults}
 
 CRITICAL GUIDELINES:
-- If fact-check database results are provided above, heavily weight them in your analysis
-- Professional fact-checkers have already reviewed these claims
-- Assess based on your knowledge and logical reasoning
+- Use Google Search to find recent information and fact-checks about this claim
+- Prioritize fact-checks from reputable sources like Snopes, PolitiFact, Reuters, AP News
+- Assess based on your knowledge, search results, and logical reasoning
 - Identify factual claims vs opinions
 - Look for red flags: sensational language, lack of sources, logical fallacies
-- For events after your training cutoff, explicitly state "This claim involves recent events I cannot verify"
-- Suggest verification steps for claims you cannot confirm
+- For recent events, use search results to verify current information
 - Consider context and potential biases
 
 Format:
 VERDICT: [TRUE/FALSE/UNCERTAIN]
 CONFIDENCE: [HIGH/MEDIUM/LOW]
-EXPLANATION: [Include knowledge limitations if applicable]
+EXPLANATION: [Include sources found via search if relevant]
 KEY POINTS:
-- [Factual assessment or limitation]
+- [Factual assessment with sources]
 - [Red flags or verification needs]
 - [Additional context]`
+          }],
+          tools: [{
+            google_search_retrieval: {
+              dynamic_retrieval_config: {
+                mode: "MODE_DYNAMIC",
+                dynamic_threshold: 0.3
+              }
+            }
           }]
         })
       }
