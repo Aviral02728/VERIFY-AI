@@ -83,43 +83,37 @@ Deno.serve(async (req: Request) => {
         body: JSON.stringify({
           contents: [{
             parts: [{
-              text: `You are a fact-checking expert analyzing news for credibility and accuracy. Use Google Search to find current information and fact-checks about this article.
+              text: `Analyze this news article for credibility and accuracy using Google Search when needed.
 
 URL: ${url}
 Domain: ${domain}
-${pageContent ? `Article Content:\n${pageContent.substring(0, 4000)}` : 'Content unavailable'}
+${pageContent ? `Content:\n${pageContent.substring(0, 4000)}` : 'Content unavailable'}
 
-IMPORTANT:
-- Use Google Search to find recent information and fact-checks about claims in this article
-- Prioritize fact-checks from reputable sources like Snopes, PolitiFact, Reuters, AP News
-- Analyze the source's reputation and journalistic standards
-- Evaluate content for bias, sensationalism, or misinformation patterns
-- For recent events, use search results to verify current information
-- Consider writing quality, evidence citations, and fact-checkability
-- Check if the domain or specific claims have been flagged by fact-checkers
-- ALWAYS cite sources when available from search results
+Provide your analysis in this EXACT format:
 
-Format:
 VERDICT: [TRUSTWORTHY/SUSPICIOUS/UNCERTAIN]
 DOMAIN_SCORE: [0-100]
 REPUTATION: [EXCELLENT/GOOD/MODERATE/POOR/UNKNOWN]
 KNOWN_MISINFORMATION: [YES/NO]
 FINDINGS:
-- [Finding about source/content quality with sources]
-- [Finding about verifiability with search results]
-- [Additional findings]`
+- [First finding with sources]
+- [Second finding]
+- [Third finding]`
             }]
           }],
           tools: [{
             googleSearch: {}
-          }]
+          }],
+          generationConfig: {
+            temperature: 0.7
+          }
         })
       }
     );
 
     if (!geminiResponse.ok) {
       const errorText = await geminiResponse.text();
-      console.error("AI API error:", geminiResponse.status, errorText);
+      console.error("Gemini API error:", geminiResponse.status, errorText);
       return new Response(
         JSON.stringify({ error: "Verification failed" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -127,9 +121,18 @@ FINDINGS:
     }
 
     const geminiData = await geminiResponse.json();
-    const responseText = geminiData.candidates?.[0]?.content?.parts?.[0]?.text || "";
+    console.log("Full Gemini response:", JSON.stringify(geminiData, null, 2));
+    
+    // Extract text from candidates
+    let responseText = "";
+    if (geminiData.candidates?.[0]?.content?.parts) {
+      responseText = geminiData.candidates[0].content.parts
+        .filter((part: any) => part.text)
+        .map((part: any) => part.text)
+        .join("\n");
+    }
 
-    console.log("Gemini response:", responseText);
+    console.log("Extracted response text:", responseText);
 
     // Parse the response
     const verdictMatch = responseText.match(/VERDICT:\s*(TRUSTWORTHY|SUSPICIOUS|UNCERTAIN)/i);

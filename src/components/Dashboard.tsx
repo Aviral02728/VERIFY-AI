@@ -24,17 +24,18 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-background">
-      <nav className="bg-card/50 backdrop-blur-sm border-b border-border sticky top-0 z-50">
+      <nav className="bg-card/50 backdrop-blur-sm border-b border-border sticky top-0 z-50 animate-slide-in-from-bottom">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
           <div className="flex items-center space-x-2">
-            <Shield className="h-8 w-8 text-primary" />
-            <span className="text-2xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+            <Shield className="h-8 w-8 text-primary animate-bounce-in glow-effect" />
+            <span className="text-2xl font-bold gradient-text">
               VerifyAI
             </span>
           </div>
           <Button
             onClick={handleSignOut}
             variant="ghost"
+            className="hover-scale"
           >
             <LogOut className="h-5 w-5 mr-2" />
             Sign Out
@@ -42,43 +43,43 @@ export default function Dashboard() {
         </div>
       </nav>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 animate-fade-in">
+        <div className="mb-8 slide-up">
           <h1 className="text-3xl font-bold mb-2">Content Verification</h1>
           <p className="text-muted-foreground">Verify articles and URLs with AI-powered analysis</p>
         </div>
 
         <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as Tab)} className="w-full">
-          <TabsList className="grid w-full max-w-2xl grid-cols-4 mb-6">
-            <TabsTrigger value="text" className="transition-all duration-200">
+          <TabsList className="grid w-full max-w-2xl grid-cols-4 mb-6 glass-effect p-1">
+            <TabsTrigger value="text" className="transition-all duration-200 hover-scale">
               <FileText className="h-5 w-5 mr-2" />
               Text
             </TabsTrigger>
-            <TabsTrigger value="url" className="transition-all duration-200">
+            <TabsTrigger value="url" className="transition-all duration-200 hover-scale">
               <LinkIcon className="h-5 w-5 mr-2" />
               URL
             </TabsTrigger>
-            <TabsTrigger value="image" className="transition-all duration-200">
+            <TabsTrigger value="image" className="transition-all duration-200 hover-scale">
               <Image className="h-5 w-5 mr-2" />
               Image
             </TabsTrigger>
-            <TabsTrigger value="history" className="transition-all duration-200">
+            <TabsTrigger value="history" className="transition-all duration-200 hover-scale">
               <HistoryIcon className="h-5 w-5 mr-2" />
               History
             </TabsTrigger>
           </TabsList>
 
-          <div className="bg-card rounded-2xl border border-border shadow-lg transition-all duration-300 hover:shadow-xl">
-            <TabsContent value="text" className="m-0">
+          <div className="bg-card rounded-2xl border border-border shadow-lg card-hover">
+            <TabsContent value="text" className="m-0 animate-fade-in">
               <TextAnalyzer />
             </TabsContent>
-            <TabsContent value="url" className="m-0">
+            <TabsContent value="url" className="m-0 animate-fade-in">
               <UrlAnalyzer />
             </TabsContent>
-            <TabsContent value="image" className="m-0">
+            <TabsContent value="image" className="m-0 animate-fade-in">
               <ImageAnalyzer />
             </TabsContent>
-            <TabsContent value="history" className="m-0">
+            <TabsContent value="history" className="m-0 animate-fade-in">
               <History />
             </TabsContent>
           </div>

@@ -94,18 +94,18 @@ export default function TextAnalyzer() {
 
   return (
     <div className="p-8">
-      <h2 className="text-2xl font-bold mb-2">Text Verification</h2>
-      <p className="text-muted-foreground mb-6">Paste any article, claim, or text to verify its authenticity with AI</p>
+      <h2 className="text-2xl font-bold mb-2 slide-up">Text Verification</h2>
+      <p className="text-muted-foreground mb-6 fade-in-slow">Paste any article, claim, or text to verify its authenticity with AI</p>
 
       <div className="space-y-6">
-        <div>
+        <div className="animate-scale-in">
           <label className="block text-sm font-medium mb-2">
             Enter Text to Verify
           </label>
           <Textarea
             value={text}
             onChange={(e) => setText(e.target.value)}
-            className="h-64 resize-none"
+            className="h-64 resize-none glass-effect"
             placeholder="Paste the text you want to verify here..."
           />
         </div>
@@ -113,7 +113,7 @@ export default function TextAnalyzer() {
         <Button
           onClick={analyzeText}
           disabled={loading || !text.trim()}
-          className="w-full"
+          className="w-full hover-scale glow-effect"
           size="lg"
         >
           {loading ? (
@@ -130,29 +130,29 @@ export default function TextAnalyzer() {
         </Button>
 
         {result && (
-          <div className={`bg-gradient-to-br ${getVerdictColor()} rounded-2xl p-8 border-2 animate-in fade-in-50 duration-500`}>
-            <div className="flex items-center justify-center mb-6">
+          <div className={`bg-gradient-to-br ${getVerdictColor()} rounded-2xl p-8 border-2 animate-bounce-in`}>
+            <div className="flex items-center justify-center mb-6 animate-scale-in">
               {getVerdictIcon()}
             </div>
 
-            <div className="text-center mb-6">
+            <div className="text-center mb-6 slide-up">
               <h3 className="text-4xl font-bold mb-2">{getVerdictText()}</h3>
               <p className="text-lg text-muted-foreground">
                 Confidence: {result.confidence}
               </p>
             </div>
 
-            <div className="bg-card rounded-xl p-6 mb-4 border border-border">
+            <div className="bg-card/80 backdrop-blur-sm rounded-xl p-6 mb-4 border border-border card-hover">
               <h4 className="font-semibold mb-3 text-lg">Analysis</h4>
               <p className="leading-relaxed">{result.explanation}</p>
             </div>
 
             {result.keyPoints.length > 0 && (
-              <div className="bg-card rounded-xl p-6 border border-border">
+              <div className="bg-card/80 backdrop-blur-sm rounded-xl p-6 border border-border card-hover">
                 <h4 className="font-semibold mb-3 text-lg">Key Points</h4>
                 <ul className="space-y-2">
                   {result.keyPoints.map((point, index) => (
-                    <li key={index} className="flex items-start space-x-2">
+                    <li key={index} className="flex items-start space-x-2 animate-fade-in" style={{animationDelay: `${index * 100}ms`}}>
                       <span className="text-primary mt-1">•</span>
                       <span className="flex-1">{point}</span>
                     </li>

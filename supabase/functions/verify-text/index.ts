@@ -49,40 +49,34 @@ Deno.serve(async (req: Request) => {
         body: JSON.stringify({
           contents: [{
             parts: [{
-              text: `You are an expert fact-checker analyzing claims for accuracy. Use Google Search to find current information and fact-checks.
+              text: `Analyze this claim for factual accuracy using Google Search when needed for verification.
 
-Text: "${content}"
+Claim: "${content}"
 
-CRITICAL GUIDELINES:
-- Use Google Search to find recent information and fact-checks about this claim
-- Prioritize fact-checks from reputable sources like Snopes, PolitiFact, Reuters, AP News
-- Assess based on your knowledge, search results, and logical reasoning
-- Identify factual claims vs opinions
-- Look for red flags: sensational language, lack of sources, logical fallacies
-- For recent events, use search results to verify current information
-- Consider context and potential biases
-- ALWAYS cite sources when available from search results
+Provide your analysis in this EXACT format:
 
-Format:
 VERDICT: [TRUE/FALSE/UNCERTAIN]
 CONFIDENCE: [HIGH/MEDIUM/LOW]
-EXPLANATION: [Include sources found via search if relevant]
+EXPLANATION: [Your detailed analysis with sources when available]
 KEY POINTS:
-- [Factual assessment with sources]
-- [Red flags or verification needs]
-- [Additional context]`
+- [First key point]
+- [Second key point]
+- [Third key point]`
             }]
           }],
           tools: [{
             googleSearch: {}
-          }]
+          }],
+          generationConfig: {
+            temperature: 0.7
+          }
         })
       }
     );
 
     if (!geminiResponse.ok) {
       const errorText = await geminiResponse.text();
-      console.error("AI API error:", geminiResponse.status, errorText);
+      console.error("Gemini API error:", geminiResponse.status, errorText);
       return new Response(
         JSON.stringify({ error: "Verification failed" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -90,9 +84,18 @@ KEY POINTS:
     }
 
     const geminiData = await geminiResponse.json();
-    const responseText = geminiData.candidates?.[0]?.content?.parts?.[0]?.text || "";
+    console.log("Full Gemini response:", JSON.stringify(geminiData, null, 2));
+    
+    // Extract text from candidates
+    let responseText = "";
+    if (geminiData.candidates?.[0]?.content?.parts) {
+      responseText = geminiData.candidates[0].content.parts
+        .filter((part: any) => part.text)
+        .map((part: any) => part.text)
+        .join("\n");
+    }
 
-    console.log("Gemini response:", responseText);
+    console.log("Extracted response text:", responseText);
 
     // Parse the response
     const verdictMatch = responseText.match(/VERDICT:\s*(TRUE|FALSE|UNCERTAIN)/i);
