@@ -93,27 +93,27 @@ export default function TextAnalyzer() {
   };
 
   return (
-    <div className="p-8">
+    <div className="p-8 animate-fade-in">
       <h2 className="text-2xl font-bold mb-2 slide-up">Text Verification</h2>
-      <p className="text-muted-foreground mb-6 fade-in-slow">Paste any article, claim, or text to verify its authenticity with AI</p>
+      <p className="text-muted-foreground mb-6 fade-in-slow">Paste text or an article to analyze for authenticity and detect potential misinformation</p>
 
       <div className="space-y-6">
-        <div className="animate-scale-in">
+        <div className="animate-slide-in-from-left">
           <label className="block text-sm font-medium mb-2">
-            Enter Text to Verify
+            Enter Text to Analyze
           </label>
           <Textarea
             value={text}
             onChange={(e) => setText(e.target.value)}
-            className="h-64 resize-none glass-effect"
-            placeholder="Paste the text you want to verify here..."
+            placeholder="Paste your text here..."
+            className="min-h-[200px] glass-effect"
           />
         </div>
 
         <Button
           onClick={analyzeText}
           disabled={loading || !text.trim()}
-          className="w-full hover-scale glow-effect"
+          className="w-full glow-effect hover-scale group relative overflow-hidden"
           size="lg"
         >
           {loading ? (
@@ -123,36 +123,37 @@ export default function TextAnalyzer() {
             </>
           ) : (
             <>
-              <Search className="h-5 w-5 mr-2" />
-              Verify Text
+              <Search className="h-5 w-5 mr-2 group-hover:scale-110 transition-transform" />
+              Analyze Text
             </>
           )}
+          <div className="absolute inset-0 bg-gradient-to-r from-primary to-accent opacity-0 group-hover:opacity-20 transition-opacity" />
         </Button>
 
         {result && (
-          <div className={`bg-gradient-to-br ${getVerdictColor()} rounded-2xl p-8 border-2 animate-bounce-in`}>
-            <div className="flex items-center justify-center mb-6 animate-scale-in">
+          <div className={`bg-gradient-to-br ${getVerdictColor()} rounded-2xl p-8 border-2 animate-scale-in`}>
+            <div className="flex items-center justify-center mb-6 bounce-in">
               {getVerdictIcon()}
             </div>
 
             <div className="text-center mb-6 slide-up">
-              <h3 className="text-4xl font-bold mb-2">{getVerdictText()}</h3>
+              <h3 className="text-4xl font-bold mb-2 gradient-text">{getVerdictText()}</h3>
               <p className="text-lg text-muted-foreground">
                 Confidence: {result.confidence}
               </p>
             </div>
 
-            <div className="bg-card/80 backdrop-blur-sm rounded-xl p-6 mb-4 border border-border card-hover">
-              <h4 className="font-semibold mb-3 text-lg">Analysis</h4>
+            <div className="bg-card rounded-xl p-6 mb-4 border border-border glass-effect animate-slide-in-from-bottom" style={{animationDelay: '0.2s', opacity: 0, animationFillMode: 'forwards'}}>
+              <h4 className="font-semibold mb-3 text-lg">Explanation</h4>
               <p className="leading-relaxed">{result.explanation}</p>
             </div>
 
             {result.keyPoints.length > 0 && (
-              <div className="bg-card/80 backdrop-blur-sm rounded-xl p-6 border border-border card-hover">
+              <div className="bg-card rounded-xl p-6 border border-border glass-effect animate-fade-in">
                 <h4 className="font-semibold mb-3 text-lg">Key Points</h4>
                 <ul className="space-y-2">
                   {result.keyPoints.map((point, index) => (
-                    <li key={index} className="flex items-start space-x-2 animate-fade-in" style={{animationDelay: `${index * 100}ms`}}>
+                    <li key={index} className="flex items-start space-x-2 hover-scale" style={{animationDelay: `${index * 0.1}s`}}>
                       <span className="text-primary mt-1">•</span>
                       <span className="flex-1">{point}</span>
                     </li>
