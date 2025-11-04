@@ -27,30 +27,29 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
     
-    if (!LOVABLE_API_KEY) {
-      console.error("LOVABLE_API_KEY not configured");
+    if (!GEMINI_API_KEY) {
+      console.error("GEMINI_API_KEY not configured");
       return new Response(
         JSON.stringify({ error: "API key not configured" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // Call Lovable AI for text verification
+    // Call native Gemini API with Google Search grounding
     const geminiResponse = await fetch(
-      "https://ai.gateway.lovable.dev/v1/chat/completions",
+      "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent",
       {
         method: "POST",
         headers: {
-          "Authorization": `Bearer ${LOVABLE_API_KEY}`,
-          "Content-Type": "application/json"
+          "Content-Type": "application/json",
+          "x-goog-api-key": GEMINI_API_KEY
         },
         body: JSON.stringify({
-          model: "google/gemini-2.5-flash",
-          messages: [{
-            role: "user",
-            content: `You are an expert fact-checker analyzing claims for accuracy. Use Google Search to find current information and fact-checks.
+          contents: [{
+            parts: [{
+              text: `You are an expert fact-checker analyzing claims for accuracy. Use Google Search to find current information and fact-checks.
 
 Text: "${content}"
 
@@ -62,6 +61,7 @@ CRITICAL GUIDELINES:
 - Look for red flags: sensational language, lack of sources, logical fallacies
 - For recent events, use search results to verify current information
 - Consider context and potential biases
+- ALWAYS cite sources when available from search results
 
 Format:
 VERDICT: [TRUE/FALSE/UNCERTAIN]
@@ -71,14 +71,10 @@ KEY POINTS:
 - [Factual assessment with sources]
 - [Red flags or verification needs]
 - [Additional context]`
+            }]
           }],
           tools: [{
-            google_search_retrieval: {
-              dynamic_retrieval_config: {
-                mode: "MODE_DYNAMIC",
-                dynamic_threshold: 0.3
-              }
-            }
+            googleSearch: {}
           }]
         })
       }
@@ -94,7 +90,7 @@ KEY POINTS:
     }
 
     const geminiData = await geminiResponse.json();
-    const responseText = geminiData.choices?.[0]?.message?.content || "";
+    const responseText = geminiData.candidates?.[0]?.content?.parts?.[0]?.text || "";
 
     console.log("Gemini response:", responseText);
 

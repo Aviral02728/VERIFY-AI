@@ -36,10 +36,10 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
     
-    if (!LOVABLE_API_KEY) {
-      console.error("LOVABLE_API_KEY not configured");
+    if (!GEMINI_API_KEY) {
+      console.error("GEMINI_API_KEY not configured");
       return new Response(
         JSON.stringify({ error: "API key not configured" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -71,20 +71,19 @@ Deno.serve(async (req: Request) => {
       console.error("Failed to fetch page:", e);
     }
 
-    // Call Lovable AI for verification
+    // Call native Gemini API with Google Search grounding
     const geminiResponse = await fetch(
-      "https://ai.gateway.lovable.dev/v1/chat/completions",
+      "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent",
       {
         method: "POST",
         headers: {
-          "Authorization": `Bearer ${LOVABLE_API_KEY}`,
-          "Content-Type": "application/json"
+          "Content-Type": "application/json",
+          "x-goog-api-key": GEMINI_API_KEY
         },
         body: JSON.stringify({
-          model: "google/gemini-2.5-flash",
-          messages: [{
-            role: "user",
-            content: `You are a fact-checking expert analyzing news for credibility and accuracy. Use Google Search to find current information and fact-checks about this article.
+          contents: [{
+            parts: [{
+              text: `You are a fact-checking expert analyzing news for credibility and accuracy. Use Google Search to find current information and fact-checks about this article.
 
 URL: ${url}
 Domain: ${domain}
@@ -98,6 +97,7 @@ IMPORTANT:
 - For recent events, use search results to verify current information
 - Consider writing quality, evidence citations, and fact-checkability
 - Check if the domain or specific claims have been flagged by fact-checkers
+- ALWAYS cite sources when available from search results
 
 Format:
 VERDICT: [TRUSTWORTHY/SUSPICIOUS/UNCERTAIN]
@@ -108,14 +108,10 @@ FINDINGS:
 - [Finding about source/content quality with sources]
 - [Finding about verifiability with search results]
 - [Additional findings]`
+            }]
           }],
           tools: [{
-            google_search_retrieval: {
-              dynamic_retrieval_config: {
-                mode: "MODE_DYNAMIC",
-                dynamic_threshold: 0.3
-              }
-            }
+            googleSearch: {}
           }]
         })
       }
@@ -131,7 +127,7 @@ FINDINGS:
     }
 
     const geminiData = await geminiResponse.json();
-    const responseText = geminiData.choices?.[0]?.message?.content || "";
+    const responseText = geminiData.candidates?.[0]?.content?.parts?.[0]?.text || "";
 
     console.log("Gemini response:", responseText);
 
