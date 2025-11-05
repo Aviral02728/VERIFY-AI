@@ -137,24 +137,24 @@ export default function History() {
   };
 
   return (
-    <div className="p-4 sm:p-8">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-        <div className="min-w-0">
-          <h2 className="text-xl sm:text-2xl font-bold mb-2 flex items-center gap-2">
-            <HistoryIcon className="h-6 w-6 sm:h-7 sm:w-7 shrink-0" />
-            <span className="truncate">Analysis History</span>
+    <div className="p-8">
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h2 className="text-2xl font-bold mb-2 flex items-center gap-2">
+            <HistoryIcon className="h-7 w-7" />
+            Analysis History
           </h2>
-          <p className="text-sm text-muted-foreground">View your past verification results</p>
+          <p className="text-muted-foreground">View your past verification results</p>
         </div>
-        <div className="flex gap-2 shrink-0">
-          <Button onClick={fetchHistory} variant="outline" size="sm" className="flex-1 sm:flex-none">
-            <RefreshCw className="h-4 w-4 sm:mr-2" />
-            <span className="hidden sm:inline">Refresh</span>
+        <div className="flex gap-2">
+          <Button onClick={fetchHistory} variant="outline" size="sm">
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Refresh
           </Button>
           {history.length > 0 && (
-            <Button onClick={clearHistory} variant="destructive" size="sm" className="flex-1 sm:flex-none">
-              <Trash2 className="h-4 w-4 sm:mr-2" />
-              <span className="hidden sm:inline">Clear All</span>
+            <Button onClick={clearHistory} variant="destructive" size="sm">
+              <Trash2 className="h-4 w-4 mr-2" />
+              Clear All
             </Button>
           )}
         </div>
@@ -175,21 +175,21 @@ export default function History() {
           {history.map((item) => (
             <div
               key={item.id}
-              className="bg-card rounded-xl border border-border p-4 sm:p-6 hover:shadow-lg transition-all duration-300 animate-in fade-in-50 slide-in-from-bottom-4"
+              className="bg-card rounded-xl border border-border p-6 hover:shadow-lg transition-all duration-300 animate-in fade-in-50 slide-in-from-bottom-4"
             >
-              <div className="flex items-start justify-between gap-2 sm:gap-4">
-                <div className="flex items-start gap-2 sm:gap-4 flex-1 min-w-0 overflow-hidden">
-                  <div className="mt-1 text-primary shrink-0">
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex items-start gap-4 flex-1">
+                  <div className="mt-1 text-primary">
                     {getIcon(item.content_type)}
                   </div>
-                  <div className="flex-1 min-w-0 overflow-hidden">
-                    <div className="flex items-center gap-2 sm:gap-3 mb-2 flex-wrap">
-                      <Badge variant="outline" className="capitalize shrink-0">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-3 mb-2">
+                      <Badge variant="outline" className="capitalize">
                         {item.content_type}
                       </Badge>
                       {getVerdictBadge(item.result)}
                     </div>
-                    <p className="text-sm text-muted-foreground break-words mb-1 overflow-hidden">
+                    <p className="text-sm text-muted-foreground truncate mb-1">
                       {item.content}
                     </p>
                     <p className="text-xs text-muted-foreground">

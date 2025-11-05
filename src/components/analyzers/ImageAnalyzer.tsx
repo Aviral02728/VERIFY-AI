@@ -126,21 +126,20 @@ export default function ImageAnalyzer() {
   };
 
   return (
-    <div className="p-8 animate-fade-in">
-      <h2 className="text-2xl font-bold mb-2 slide-up">Image Verification</h2>
-      <p className="text-muted-foreground mb-6 fade-in-slow">Upload an image to check for manipulation or authenticity</p>
+    <div className="p-8">
+      <h2 className="text-2xl font-bold mb-2">Image Verification</h2>
+      <p className="text-muted-foreground mb-6">Upload an image to check for manipulation or authenticity</p>
 
       <div className="space-y-6">
-        <div className="animate-slide-in-from-left">
+        <div>
           <label className="block text-sm font-medium mb-2">
             Upload Image
           </label>
           
           {!imagePreview ? (
-            <label className="flex flex-col items-center justify-center w-full h-64 border-2 border-dashed border-border rounded-xl cursor-pointer hover:border-primary/50 transition-all hover:bg-accent/5 card-hover group relative overflow-hidden">
-              <div className="shimmer absolute inset-0 opacity-0 group-hover:opacity-100" />
-              <div className="flex flex-col items-center justify-center pt-5 pb-6 relative z-10">
-                <Upload className="h-12 w-12 mb-3 text-muted-foreground group-hover:scale-110 transition-transform float" />
+            <label className="flex flex-col items-center justify-center w-full h-64 border-2 border-dashed border-border rounded-xl cursor-pointer hover:border-primary/50 transition-all hover:bg-accent/5">
+              <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                <Upload className="h-12 w-12 mb-3 text-muted-foreground" />
                 <p className="mb-2 text-sm text-muted-foreground">
                   <span className="font-semibold">Click to upload</span> or drag and drop
                 </p>
@@ -154,7 +153,7 @@ export default function ImageAnalyzer() {
               />
             </label>
           ) : (
-            <div className="relative rounded-xl overflow-hidden border-2 border-border animate-scale-in glow-effect">
+            <div className="relative rounded-xl overflow-hidden border-2 border-border">
               <img
                 src={imagePreview}
                 alt="Preview"
@@ -164,7 +163,7 @@ export default function ImageAnalyzer() {
                 onClick={clearImage}
                 variant="destructive"
                 size="icon"
-                className="absolute top-2 right-2 glow-effect hover-scale"
+                className="absolute top-2 right-2"
               >
                 <X className="h-4 w-4" />
               </Button>
@@ -175,7 +174,7 @@ export default function ImageAnalyzer() {
         <Button
           onClick={analyzeImage}
           disabled={loading || !imageFile}
-          className="w-full glow-effect hover-scale group relative overflow-hidden"
+          className="w-full"
           size="lg"
         >
           {loading ? (
@@ -185,37 +184,36 @@ export default function ImageAnalyzer() {
             </>
           ) : (
             <>
-              <Search className="h-5 w-5 mr-2 group-hover:scale-110 transition-transform" />
+              <Search className="h-5 w-5 mr-2" />
               Verify Image
             </>
           )}
-          <div className="absolute inset-0 bg-gradient-to-r from-primary to-accent opacity-0 group-hover:opacity-20 transition-opacity" />
         </Button>
 
         {result && (
-          <div className={`bg-gradient-to-br ${getVerdictColor()} rounded-2xl p-8 border-2 animate-scale-in`}>
-            <div className="flex items-center justify-center mb-6 bounce-in">
+          <div className={`bg-gradient-to-br ${getVerdictColor()} rounded-2xl p-8 border-2 animate-in fade-in-50 duration-500`}>
+            <div className="flex items-center justify-center mb-6">
               {getVerdictIcon()}
             </div>
 
-            <div className="text-center mb-6 slide-up">
-              <h3 className="text-4xl font-bold mb-2 gradient-text">{getVerdictText()}</h3>
+            <div className="text-center mb-6">
+              <h3 className="text-4xl font-bold mb-2">{getVerdictText()}</h3>
               <p className="text-lg text-muted-foreground">
                 Confidence: {result.confidence}
               </p>
             </div>
 
-            <div className="bg-card rounded-xl p-6 mb-4 border border-border glass-effect animate-slide-in-from-bottom" style={{animationDelay: '0.2s', opacity: 0, animationFillMode: 'forwards'}}>
+            <div className="bg-card rounded-xl p-6 mb-4 border border-border">
               <h4 className="font-semibold mb-3 text-lg">Analysis</h4>
               <p className="leading-relaxed">{result.explanation}</p>
             </div>
 
             {result.findings.length > 0 && (
-              <div className="bg-card rounded-xl p-6 border border-border glass-effect animate-fade-in">
+              <div className="bg-card rounded-xl p-6 border border-border">
                 <h4 className="font-semibold mb-3 text-lg">Findings</h4>
                 <ul className="space-y-2">
                   {result.findings.map((finding, index) => (
-                    <li key={index} className="flex items-start space-x-2 hover-scale" style={{animationDelay: `${index * 0.1}s`}}>
+                    <li key={index} className="flex items-start space-x-2">
                       <span className="text-primary mt-1">•</span>
                       <span className="flex-1">{finding}</span>
                     </li>
