@@ -175,21 +175,21 @@ export default function History() {
           {history.map((item) => (
             <div
               key={item.id}
-              className="bg-card rounded-xl border border-border p-6 hover:shadow-lg transition-all duration-300 animate-in fade-in-50 slide-in-from-bottom-4"
+              className="bg-card rounded-xl border border-border p-4 sm:p-6 hover:shadow-lg transition-all duration-300 animate-in fade-in-50 slide-in-from-bottom-4"
             >
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex items-start gap-4 flex-1">
-                  <div className="mt-1 text-primary">
+              <div className="flex items-start justify-between gap-2 sm:gap-4">
+                <div className="flex items-start gap-2 sm:gap-4 flex-1 min-w-0 overflow-hidden">
+                  <div className="mt-1 text-primary shrink-0">
                     {getIcon(item.content_type)}
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-3 mb-2">
-                      <Badge variant="outline" className="capitalize">
+                  <div className="flex-1 min-w-0 overflow-hidden">
+                    <div className="flex items-center gap-2 sm:gap-3 mb-2 flex-wrap">
+                      <Badge variant="outline" className="capitalize shrink-0">
                         {item.content_type}
                       </Badge>
                       {getVerdictBadge(item.result)}
                     </div>
-                    <p className="text-sm text-muted-foreground truncate mb-1">
+                    <p className="text-sm text-muted-foreground break-words mb-1 overflow-hidden">
                       {item.content}
                     </p>
                     <p className="text-xs text-muted-foreground">
