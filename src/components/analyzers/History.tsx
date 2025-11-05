@@ -137,24 +137,24 @@ export default function History() {
   };
 
   return (
-    <div className="p-8">
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h2 className="text-2xl font-bold mb-2 flex items-center gap-2">
-            <HistoryIcon className="h-7 w-7" />
-            Analysis History
+    <div className="p-4 sm:p-8">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+        <div className="min-w-0">
+          <h2 className="text-xl sm:text-2xl font-bold mb-2 flex items-center gap-2">
+            <HistoryIcon className="h-6 w-6 sm:h-7 sm:w-7 shrink-0" />
+            <span className="truncate">Analysis History</span>
           </h2>
-          <p className="text-muted-foreground">View your past verification results</p>
+          <p className="text-sm text-muted-foreground">View your past verification results</p>
         </div>
-        <div className="flex gap-2">
-          <Button onClick={fetchHistory} variant="outline" size="sm">
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Refresh
+        <div className="flex gap-2 shrink-0">
+          <Button onClick={fetchHistory} variant="outline" size="sm" className="flex-1 sm:flex-none">
+            <RefreshCw className="h-4 w-4 sm:mr-2" />
+            <span className="hidden sm:inline">Refresh</span>
           </Button>
           {history.length > 0 && (
-            <Button onClick={clearHistory} variant="destructive" size="sm">
-              <Trash2 className="h-4 w-4 mr-2" />
-              Clear All
+            <Button onClick={clearHistory} variant="destructive" size="sm" className="flex-1 sm:flex-none">
+              <Trash2 className="h-4 w-4 sm:mr-2" />
+              <span className="hidden sm:inline">Clear All</span>
             </Button>
           )}
         </div>
