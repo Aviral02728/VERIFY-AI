@@ -41,12 +41,24 @@ export default function UrlAnalyzer() {
 
     try {
       const { data: userData } = await supabase.auth.getUser();
-      
+
       const { data, error } = await supabase.functions.invoke('verify-url', {
         body: { url },
       });
 
-      if (error) throw error;
+      if (error) {
+        let message = error.message || 'Failed to analyze URL';
+        const anyErr: any = error;
+        if (anyErr?.context instanceof Response) {
+          try {
+            const body = await anyErr.context.json();
+            if (body?.error) message = body.error;
+          } catch {
+            // ignore
+          }
+        }
+        throw new Error(message);
+      }
 
       setResult(data);
       setUrl(''); // Clear input after successful analysis
