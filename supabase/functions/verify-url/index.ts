@@ -141,8 +141,22 @@ FINDINGS:
     if (!geminiResponse.ok) {
       const errorText = await geminiResponse.text();
       console.error("Gemini API error:", geminiResponse.status, errorText);
+
+      if (geminiResponse.status === 429) {
+        return new Response(
+          JSON.stringify({
+            error: "AI quota exceeded. Please retry later or update the API key / billing.",
+            providerStatus: 429,
+          }),
+          { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
       return new Response(
-        JSON.stringify({ error: "Verification failed" }),
+        JSON.stringify({
+          error: "Verification failed",
+          providerStatus: geminiResponse.status,
+        }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
