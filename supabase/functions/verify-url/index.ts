@@ -1,7 +1,6 @@
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Client-Info, Apikey",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
 interface VerifyRequest {
@@ -97,26 +96,29 @@ Deno.serve(async (req: Request) => {
       }
     }
 
-    // Call native Gemini API with Google Search grounding
-    const geminiResponse = await fetch(
-      "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-goog-api-key": GEMINI_API_KEY
-        },
-        body: JSON.stringify({
-          contents: [{
-            parts: [{
-              text: `Analyze this news article for credibility and accuracy. Use the search results to verify claims and check reputation.
+    // Use Lovable AI Gateway (no Gemini billing/quota required)
+    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    if (!LOVABLE_API_KEY) {
+      console.error("LOVABLE_API_KEY not configured");
+      return new Response(
+        JSON.stringify({ error: "AI gateway key not configured" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const systemPrompt =
+      "You are a fact-checking and source-credibility assistant. " +
+      "Return your answer strictly in the requested format. " +
+      "If evidence is insufficient, choose UNCERTAIN.";
+
+    const prompt = `Analyze this news article for credibility and accuracy. Use the search results to verify claims and check reputation.
 
 URL: ${url}
 Domain: ${domain}
-${pageContent ? `Content:\n${pageContent.substring(0, 4000)}` : 'Content unavailable'}
+${pageContent ? `Content:\n${pageContent.substring(0, 4000)}` : "Content unavailable"}
 ${searchContext}
 
-Based on the search results and your knowledge, provide analysis in this EXACT format:
+Provide analysis in this EXACT format:
 
 VERDICT: [TRUSTWORTHY/SUSPICIOUS/UNCERTAIN]
 DOMAIN_SCORE: [0-100]
@@ -125,55 +127,53 @@ KNOWN_MISINFORMATION: [YES/NO]
 FINDINGS:
 - [First finding citing specific sources]
 - [Second finding with verification]
-- [Third finding]`
-            }]
-          }],
-          tools: [{
-            googleSearch: {}
-          }],
-          generationConfig: {
-            temperature: 0.7
-          }
-        })
-      }
-    );
+- [Third finding]`;
 
-    if (!geminiResponse.ok) {
-      const errorText = await geminiResponse.text();
-      console.error("Gemini API error:", geminiResponse.status, errorText);
+    const aiResp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "google/gemini-2.5-flash",
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: prompt },
+        ],
+      }),
+    });
 
-      if (geminiResponse.status === 429) {
+    if (!aiResp.ok) {
+      const errorText = await aiResp.text();
+      console.error("AI gateway error:", aiResp.status, errorText);
+
+      // Bubble up rate-limit / credits issues.
+      if (aiResp.status === 429) {
         return new Response(
-          JSON.stringify({
-            error: "AI quota exceeded. Please retry later or update the API key / billing.",
-            providerStatus: 429,
-          }),
+          JSON.stringify({ error: "Rate limit exceeded. Please retry in a moment.", providerStatus: 429 }),
           { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      if (aiResp.status === 402) {
+        return new Response(
+          JSON.stringify({ error: "AI credits exhausted. Please add credits and retry.", providerStatus: 402 }),
+          { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
 
       return new Response(
-        JSON.stringify({
-          error: "Verification failed",
-          providerStatus: geminiResponse.status,
-        }),
+        JSON.stringify({ error: "Verification failed", providerStatus: aiResp.status }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    const geminiData = await geminiResponse.json();
-    console.log("Full Gemini response:", JSON.stringify(geminiData, null, 2));
-    
-    // Extract text from candidates
-    let responseText = "";
-    if (geminiData.candidates?.[0]?.content?.parts) {
-      responseText = geminiData.candidates[0].content.parts
-        .filter((part: any) => part.text)
-        .map((part: any) => part.text)
-        .join("\n");
-    }
+    const aiData = await aiResp.json();
+    console.log("Full AI response:", JSON.stringify(aiData, null, 2));
 
+    const responseText: string = aiData?.choices?.[0]?.message?.content ?? "";
     console.log("Extracted response text:", responseText);
+
 
     // Parse the response
     const verdictMatch = responseText.match(/VERDICT:\s*(TRUSTWORTHY|SUSPICIOUS|UNCERTAIN)/i);

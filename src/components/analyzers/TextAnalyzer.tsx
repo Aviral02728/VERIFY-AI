@@ -34,12 +34,25 @@ export default function TextAnalyzer() {
 
     try {
       const { data: userData } = await supabase.auth.getUser();
-      
+
       const { data, error } = await supabase.functions.invoke('verify-text', {
         body: { content: text, type: 'text' },
       });
 
-      if (error) throw error;
+      if (error) {
+        let message = error.message || 'Failed to analyze text';
+        const anyErr: any = error;
+        // supabase-js Functions errors often include a Response in `context`
+        if (anyErr?.context instanceof Response) {
+          try {
+            const body = await anyErr.context.json();
+            if (body?.error) message = body.error;
+          } catch {
+            // ignore
+          }
+        }
+        throw new Error(message);
+      }
 
       setResult(data);
       setText(''); // Clear input after successful analysis
