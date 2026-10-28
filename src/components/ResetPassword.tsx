@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Shield, Lock, Eye, EyeOff, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -19,20 +19,17 @@ export default function ResetPassword() {
 
   // Recovery links sign the user in via the URL (hash or ?code=...).
   // The Supabase client exchanges it automatically; wait briefly for that.
-  useState(() => {
+  useEffect(() => {
     const check = async () => {
-      for (let i = 0; i < 20 && !sessionChecked; i++) {
+      for (let i = 0; i < 20; i++) {
         const { data } = await supabase.auth.getSession();
-        if (data.session) {
-          setSessionChecked(true);
-          return;
-        }
+        if (data.session) break;
         await new Promise((r) => setTimeout(r, 250));
       }
       setSessionChecked(true);
     };
     check();
-  });
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -81,10 +78,6 @@ export default function ResetPassword() {
   const isRecovery =
     hash.includes('type=recovery') || params.get('type') === 'recovery' || params.has('code');
 
-  if (sessionChecked && !isRecovery && !supabase.auth) {
-    // No recovery link detected — show a hint but keep the form available.
-  }
-
   return (
     <div className="min-h-screen bg-background flex items-center justify-center py-12 px-4">
       <div className="max-w-md w-full">
@@ -125,7 +118,7 @@ export default function ResetPassword() {
                 />
                 <button
                   type="button"
-                    onClick={() => setShowPassword((s) => !s)}
+                  onClick={() => setShowPassword((s) => !s)}
                   className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
                   aria-label={showPassword ? 'Hide password' : 'Show password'}
                 >
