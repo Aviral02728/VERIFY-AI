@@ -7,6 +7,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { AuthProvider } from '@/contexts/AuthContext';
 import LandingPage from '@/components/LandingPage';
 import Dashboard from '@/components/Dashboard';
+import ResetPassword from '@/components/ResetPassword';
 import { Loader } from 'lucide-react';
 
 const queryClient = new QueryClient();
@@ -35,6 +36,14 @@ function AppContent() {
       <div className="min-h-screen bg-background flex items-center justify-center">
         <Loader className="h-12 w-12 animate-spin text-primary" />
       </div>
+    );
+  }
+
+  if (window.location.pathname.startsWith('/reset-password')) {
+    return (
+      <AuthProvider>
+        <ResetPassword />
+      </AuthProvider>
     );
   }
 
