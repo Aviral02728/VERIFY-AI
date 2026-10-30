@@ -191,10 +191,6 @@ supabase db push
 3. Run `npm run lint` and `npm run build`.
 4. Open a pull request describing the user-facing impact and validation performed.
 
-## 📄 License
-
-No license has been specified yet. Add a `LICENSE` file before distributing VERIFY-AI outside the project team.
-
 ---
 
 Built with ⚛️ React, ⚡ Vite, 💚 Supabase, and 🧠 AI.
